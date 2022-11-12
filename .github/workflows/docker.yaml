@@ -1,0 +1,29 @@
+﻿name: docker
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Login to DockerHub Registry
+        run: echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+      - name: Build the tagged Docker image
+        if: github.event_name == 'release'
+        run: docker build . -t ghcr.io/simonprinz/pingwebhook:${GITHUB_REF:11}
+      - name: Push the tagged Docker image
+        if: github.event_name == 'release'
+        run: docker push ghcr.io/simonprinz/pingwebhook:${GITHUB_REF:11}
+      - name: Tag the latest Docker image
+        run: docker build . -t ghcr.io/simonprinz/pingwebhook:latest
+      - name: Push the latest Docker image
+        run: docker push ghcr.io/simonprinz/pingwebhook:latest
